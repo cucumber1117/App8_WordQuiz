@@ -1,0 +1,103 @@
+.create-book.layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+/* Desktop centering and sensible max width */
+.create-book.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.create-book .center-block {
+  display: inline-block;
+  text-align: left;
+  padding: 16px;
+  border-radius: 10px;
+  width: 380px; /* keep selector area compact on desktop */
+}
+
+.create-book .group-actions { margin-top: 10px }
+.create-book .group-actions .actions-row { display:flex; gap:8px; align-items:center }
+.create-book .group-actions input#newGroupName { padding:8px; border-radius:6px; border:1px solid #cbd5e1 }
+
+.create-book .import-block { margin-top: 12px }
+.create-book .import-row { display:flex; gap:12px; align-items:flex-start }
+.create-book .import-row textarea { width: 520px; min-height: 80px; padding:8px; border-radius:6px; border:1px solid #cbd5e1 }
+.create-book .import-actions { display:flex; flex-direction:column }
+
+@media (max-width:900px) {
+  .create-book .center-block { width:100% }
+  .create-book .group-actions .actions-row { flex-direction:column; align-items:stretch }
+  .create-book .import-row { flex-direction:column }
+  .create-book .import-row textarea { width:100% }
+}
+
+/* Desktop tweaks: make panel area take remaining space and align nicely */
+@media (min-width:901px) {
+  .create-book .main { display:block; width: calc(100% - 420px); }
+  .create-book .panel { margin-left: 12px; max-width: 760px; }
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: 260px;
+  background: #f8fafc;
+  border: 1px solid #e6eef5;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+}
+
+/* ===== Main Panel ===== */
+.main {
+  flex: 1;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #e6eef5;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  padding: 20px;
+  width: 100%;
+  max-width: 700px;
+  text-align: left;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #243b55;
+}
+
+/* ===== Empty State (初期表示) ===== */
+.empty-state {
+  background: #f9fbff;
+  border: 1px dashed #c6d6ee;
+  border-radius: 10px;
+  padding: 40px 24px;
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.empty-state h2 {
+  font-size: 1.3rem;
+  color: #2b4c7e;
+  margin-bottom: 0.8rem;
+}
+
+.hint {
+  color: #607d9a;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}

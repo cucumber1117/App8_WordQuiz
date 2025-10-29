@@ -1,0 +1,438 @@
+/* ===============================
+   グローバル
+================================= */
+body {
+  background: linear-gradient(180deg, #eef4fb, #ffffff);
+  font-family: 'Noto Sans JP', system-ui, sans-serif;
+  color: #243b55;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* ===============================
+   ヘッダー
+================================= */
+.app-header {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(90deg, #6fb3ff, #3a8cff);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.app-sub {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* ===============================
+   レイアウト
+================================= */
+.layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 1.5rem;
+}
+
+.sidebar {
+  width: 260px;
+  background: #f8fafc;
+  border: 1px solid #e6eef5;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.main {
+  flex: 1;
+}
+.main.full {
+  padding: 12px 8px;
+}
+
+/* center control block used for group select and buttons */
+.center-block {
+  display: inline-block;
+  text-align: left;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #e6eef5;
+  box-shadow: 0 2px 6px rgba(16,42,67,0.04);
+}
+
+.center-block label { display:block; margin-bottom:6px; font-weight:700 }
+.center-block select { min-width: 260px; padding:8px; border-radius:6px; border:1px solid #cbd5e1 }
+
+/* main panel centering */
+.main .panel { max-width: 980px; margin: 0 auto; }
+
+/* Ensure any direct child of .main is centered by default.
+   Some pages don't use the `.panel` class consistently, which can
+   cause the content to appear left-aligned. This rule makes the
+   main content centered and constrains its width while remaining
+   permissive for page-specific styles to override. */
+.main > * {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 980px;
+  width: 100%;
+}
+
+/* small input next to button */
+input#newGroupName { padding:8px; border-radius:6px; border:1px solid #cbd5e1 }
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #e0e7f1;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.03);
+}
+
+/* ===============================
+   ボタン系
+================================= */
+.mode-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* デフォルトの button 要素も大きめにして、class="btn" に統一的な見た目を与える */
+button {
+  font-size: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.btn {
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #e7f1ff;
+  color: #1a3d7c;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.16s ease;
+  cursor: pointer;
+}
+
+.btn:hover:not([disabled]) {
+  /* 見た目を変えてホバー時に拡大 */
+  background: linear-gradient(180deg, #66d1ff, #2f9eff);
+  color: white;
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 10px 20px rgba(47,120,230,0.18);
+}
+
+.btn[disabled] {
+  background: linear-gradient(180deg, #6fb3ff, #3a8cff);
+  color: white;
+  cursor: default;
+  opacity: 1;
+}
+
+/* ===============================
+   グループリスト
+================================= */
+.group-list ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.group-list button.group-item {
+  width: 100%;
+  text-align: left;
+  padding: 8px 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.group-list button.group-item:hover {
+  background: #eef7ff;
+}
+
+.group-list button.group-item.active {
+  font-weight: 700;
+  background: #e6f0ff;
+  border-color: #cde0ff;
+}
+
+/* ===============================
+   フォーム
+================================= */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.form-row label {
+  font-weight: 600;
+  color: #334e68;
+  font-size: 0.85rem;
+}
+
+.form-row input,
+.form-row select {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 1rem;
+}
+
+.add-btn {
+  background: linear-gradient(180deg, #6fb3ff, #3a8cff);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.add-btn:hover {
+  opacity: 0.9;
+}
+
+.add-btn.large {
+  padding: 14px 20px;
+  font-size: 16px;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(47,120,230,0.16);
+}
+.add-btn.large:hover {
+  transform: translateY(-4px) scale(1.03);
+}
+
+/* ===============================
+   単語リスト
+================================= */
+.word-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.word-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 6px;
+  border-bottom: 1px solid #f1f4f6;
+}
+
+.word-item:last-child {
+  border-bottom: none;
+}
+
+.delete-btn {
+  background: #ff7b7b;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.delete-btn:hover {
+  opacity: 0.8;
+}
+
+/* ===============================
+   クイズビュー
+================================= */
+.quiz-word {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #243b55;
+  margin: 24px 0;
+}
+
+.meaning-box {
+  margin: 16px 0;
+  background: #f9fbff;
+  border: 1px solid #dbe9ff;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.meaning-label {
+  font-size: 0.9rem;
+  color: #334e68;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.meaning-text {
+  font-size: 1.1rem;
+  color: #102a43;
+  line-height: 1.4;
+}
+
+/* 入力式クイズ用 */
+.answer-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 1rem;
+  box-shadow: inset 0 1px 2px rgba(16, 42, 67, 0.03);
+}
+.feedback {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+.feedback.correct {
+  background: linear-gradient(180deg,#e6ffef,#d1ffe7);
+  color: #0b7a45;
+  border: 1px solid #bdeccd;
+}
+.feedback.wrong {
+  background: linear-gradient(180deg,#fff1f1,#ffecec);
+  color: #8b1e1e;
+  border: 1px solid #ffd6d6;
+}
+
+/* ===============================
+   間違いリスト
+================================= */
+.wrong-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.clear-btn {
+  background: linear-gradient(180deg, #ff7b7b, #ff4f4f);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.clear-btn:hover {
+  opacity: 0.9;
+}
+
+/* ===============================
+   レスポンシブ
+================================= */
+@media (max-width: 800px) {
+  .layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+  }
+  .btn {
+    flex: 1;
+    text-align: center;
+  }
+  .center-block select { min-width: 160px }
+}
+
+/* ===============================
+   Home page specific adjustments
+   =============================== */
+.home-page .hero {
+  padding: 40px 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(250,253,255,0.9));
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(16,42,67,0.06);
+}
+
+.home-page .hero h2 {
+  font-size: 2rem;
+  margin-bottom: 6px;
+}
+
+.home-page .hero p { font-size: 1rem; color: #425c77 }
+
+/* Hero buttons — 大きく目立たせる */
+.home-page .hero .btn {
+  padding: 14px 22px;
+  font-size: 18px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #4ea1ff, #2f78e6);
+  color: white;
+  box-shadow: 0 6px 14px rgba(47,120,230,0.18);
+}
+
+.home-page .hero .btn:hover { background: linear-gradient(180deg, #3b8fe6, #266fd1); transform: translateY(-4px) scale(1.08); box-shadow: 0 12px 26px rgba(47,120,230,0.22); }
+
+.btn:active { transform: scale(0.98); }
+
+/* 戻るボタンなどの上部ナビ（ホームから各ページへ移動後）の調整 */
+.home-page .back-row .btn {
+  padding: 12px 18px;
+  font-size: 16px;
+  border-radius: 10px;
+  background: #f0f4ff;
+  color: #244370;
+  border: 1px solid #d9e6ff;
+}
+
+.home-page .back-row .btn:hover { background: #e6efff }
+
+/* Hero actions: default layout is horizontal, but on small screens stack vertical */
+.home-page .hero .hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* mobile: stack hero buttons vertically and make them full width */
+@media (max-width: 600px) {
+  .home-page .hero .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  .home-page .hero .hero-actions .btn {
+    width: 100%;
+    max-width: 360px;
+    padding: 14px 18px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+}
