@@ -87,8 +87,9 @@ export default function QuizPage() {
 
   return (
     <div className="quiz-layout layout">
-      {/* === 左サイド === */}
-      <aside className="sidebar">
+      {/* === 左サイド (設定) - クイズ実行中は非表示にする */}
+      {!running && (
+        <aside className="sidebar">
         <h3>クイズ設定</h3>
 
         <div className="formRow">
@@ -192,7 +193,8 @@ export default function QuizPage() {
             </div>
           </div>
         )}
-      </aside>
+        </aside>
+      )}
 
       {/* === メインパネル === */}
       <main className="main">

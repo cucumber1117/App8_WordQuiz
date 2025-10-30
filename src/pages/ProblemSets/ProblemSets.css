@@ -1,7 +1,9 @@
 .problemsets-page { display:flex; gap:24px; padding:18px; align-items:flex-start; max-width:1200px; margin:0 auto }
 .listPanel { width:360px; min-width:300px }
+.searchBox { margin: 8px 0 12px 0 }
+.searchBox input { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #d9e6f2 }
 .setsList { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; max-height:68vh; overflow:auto }
-.setRow { display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid #eee; border-radius:8px; background:white; }
+.setRow { display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid #eee; border-radius:8px; background:white; box-shadow:0 2px 6px rgba(16,42,67,0.04) }
 .setRow .meta { font-size:12px; color:#666; margin-top:4px }
 .viewer { flex:1; display:flex; align-items:flex-start; justify-content:center; min-height:360px }
 .empty { color:#888 }
@@ -26,6 +28,16 @@
 .setRow .primary-actions { display:flex; gap:8px }
 .setRow .secondary-actions { display:flex; gap:6px }
 .setRow .actions button { padding:8px 12px; border-radius:8px }
+
+.setsList .setRow:hover { transform: translateY(-3px); transition: all 0.12s }
+
+/* Import area */
+.importArea { background: #fff; border: 1px solid #e9f0fb; padding: 12px; border-radius:8px }
+.importTabs { display:flex; gap:8px; margin-bottom:8px }
+.importTab { padding:8px 12px; border-radius:8px; background:#f5f8fb; border:1px solid transparent; cursor:pointer }
+.importTab.active { background:#e8f3ff; border-color:#cde8ff; font-weight:700 }
+.importContent textarea { width:100%; border-radius:8px; border:1px solid #e1e8f2; padding:8px }
+.importContent .btn { margin-top:6px }
 
 @media (max-width:900px) {
   .setRow { flex-direction:column; align-items:flex-start }

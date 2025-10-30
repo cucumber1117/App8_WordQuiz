@@ -44,7 +44,7 @@ async function ensureInit() {
     const firebaseAppModule = await import('firebase/app')
     const firestoreModule = await import('firebase/firestore')
     const { initializeApp, getApps } = firebaseAppModule
-  const { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp, setDoc } = firestoreModule
+  const { getFirestore, collection, addDoc, doc, getDoc, serverTimestamp, setDoc, getDocs, query, where } = firestoreModule
 
     // If we don't have a config object, check whether an app was already initialized
     if (!config) {
@@ -78,7 +78,7 @@ async function ensureInit() {
     }
     _db = window.__FB_DB__
     // Cache helpers so subsequent calls to ensureInit return them (avoids undefined helpers)
-    _helpers = { collection, addDoc, doc, getDoc, serverTimestamp, setDoc }
+  _helpers = { collection, addDoc, doc, getDoc, serverTimestamp, setDoc, getDocs, query, where }
     window.__FB_HELPERS__ = _helpers
     return { app: _app, db: _db, helpers: _helpers }
   } catch (e) {
@@ -88,13 +88,39 @@ async function ensureInit() {
 
 export { ensureInit }
 
-export async function uploadProblemSet(obj) {
+export async function uploadProblemSet(obj, docId = null) {
   // obj: { type: 'problemSet', name, items }
+  // If docId is provided, overwrite that document. Otherwise, try to find an existing
+  // document with the same payload.name and overwrite it. If none found, create a new doc.
   try {
     const { db, helpers } = await ensureInit()
-    const col = helpers.collection(db, 'sharedProblemSets')
+    const colRef = helpers.collection(db, 'sharedProblemSets')
     const data = { payload: obj, createdAt: helpers.serverTimestamp() }
-    const ref = await helpers.addDoc(col, data)
+
+    if (docId) {
+      const dref = helpers.doc(db, 'sharedProblemSets', docId)
+      await helpers.setDoc(dref, data)
+      return docId
+    }
+
+    // Try to find existing by name (if provided)
+    if (obj && obj.name) {
+      try {
+        const q = helpers.query(colRef, helpers.where('payload.name', '==', obj.name))
+        const snaps = await helpers.getDocs(q)
+        if (!snaps.empty) {
+          const existingId = snaps.docs[0].id
+          const dref = helpers.doc(db, 'sharedProblemSets', existingId)
+          await helpers.setDoc(dref, data)
+          return existingId
+        }
+      } catch (e) {
+        // ignore query errors and fall back to creating a new doc
+        console.warn('uploadProblemSet: query failed, will create new doc', e)
+      }
+    }
+
+    const ref = await helpers.addDoc(colRef, data)
     return ref.id
   } catch (e) {
     throw e
@@ -113,12 +139,35 @@ export async function downloadProblemSet(id) {
   }
 }
 
-export async function uploadGroup(obj) {
+export async function uploadGroup(obj, docId = null) {
+  // If docId provided, overwrite. Otherwise try to find by name and overwrite; else create.
   try {
     const { db, helpers } = await ensureInit()
-    const col = helpers.collection(db, 'sharedGroups')
+    const colRef = helpers.collection(db, 'sharedGroups')
     const data = { payload: obj, createdAt: helpers.serverTimestamp() }
-    const ref = await helpers.addDoc(col, data)
+
+    if (docId) {
+      const dref = helpers.doc(db, 'sharedGroups', docId)
+      await helpers.setDoc(dref, data)
+      return docId
+    }
+
+    if (obj && obj.name) {
+      try {
+        const q = helpers.query(colRef, helpers.where('payload.name', '==', obj.name))
+        const snaps = await helpers.getDocs(q)
+        if (!snaps.empty) {
+          const existingId = snaps.docs[0].id
+          const dref = helpers.doc(db, 'sharedGroups', existingId)
+          await helpers.setDoc(dref, data)
+          return existingId
+        }
+      } catch (e) {
+        console.warn('uploadGroup: query failed, will create new doc', e)
+      }
+    }
+
+    const ref = await helpers.addDoc(colRef, data)
     return ref.id
   } catch (e) {
     throw e

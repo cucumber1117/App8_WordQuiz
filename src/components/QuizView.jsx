@@ -36,20 +36,36 @@ export default function QuizView({ words = [], items = [], onRecordWrong }) {
       return
     }
 
-    // treat as word/qa item
-    const user = normalize(answer)
-    const correct = normalize(current.meaning ?? current.answer)
-    if (!user) return
+      // treat as word/qa item
+      const user = normalize(answer)
+      if (!user) return
 
-    if (user === correct) {
-      setFeedback('correct')
-      setCorrectCount((c) => c + 1)
-      setTimeout(() => goNext(), 700)
-    } else {
-      setFeedback('wrong')
-      setShowCorrectAnswer(true)
-      if (typeof onRecordWrong === 'function' && current.id) onRecordWrong(current.id)
-    }
+      // If this item has a `word` field (group word), expect the user to input the word
+      if (current.word != null) {
+        const correct = normalize(current.word)
+        if (user === correct) {
+          setFeedback('correct')
+          setCorrectCount((c) => c + 1)
+          setTimeout(() => goNext(), 700)
+        } else {
+          setFeedback('wrong')
+          setShowCorrectAnswer(true)
+          if (typeof onRecordWrong === 'function' && current.id) onRecordWrong(current.id)
+        }
+        return
+      }
+
+      // fallback: for non-word QA items, compare against meaning/answer as before
+      const correct = normalize(current.meaning ?? current.answer)
+      if (user === correct) {
+        setFeedback('correct')
+        setCorrectCount((c) => c + 1)
+        setTimeout(() => goNext(), 700)
+      } else {
+        setFeedback('wrong')
+        setShowCorrectAnswer(true)
+        if (typeof onRecordWrong === 'function' && current.id) onRecordWrong(current.id)
+      }
   }
 
   const goNext = () => {
@@ -102,13 +118,14 @@ export default function QuizView({ words = [], items = [], onRecordWrong }) {
         </div>
       ) : (
         <div>
-          <div className="quiz-word">{current.word ?? current.question}</div>
+          {/* If this is a group word item, show meaning and ask for the word. Otherwise keep existing behavior. */}
+          <div className="quiz-word">{current.word != null ? (current.meaning ?? '—') : (current.word ?? current.question)}</div>
 
           <form onSubmit={submitAnswer} style={{ marginTop: 8 }}>
             <input
               ref={inputRef}
               className="answer-input"
-              placeholder="意味を入力して Enter またはボタンで判定"
+              placeholder={current.word != null ? "単語を入力して Enter またはボタンで判定" : "意味を入力して Enter またはボタンで判定"}
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               disabled={feedback === 'correct'}
@@ -123,7 +140,7 @@ export default function QuizView({ words = [], items = [], onRecordWrong }) {
           {feedback === 'correct' && <div className="feedback correct">正解！</div>}
           {feedback === 'wrong' && (
             <div className="feedback wrong">
-              不正解。正しい意味: <strong>{current.meaning ?? current.answer}</strong>
+              不正解。{current.word != null ? '正しい単語' : '正しい意味'}: <strong>{current.word != null ? current.word : (current.meaning ?? current.answer)}</strong>
             </div>
           )}
           {showCorrectAnswer && (

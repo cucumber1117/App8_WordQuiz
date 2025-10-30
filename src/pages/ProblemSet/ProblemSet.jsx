@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import * as storage from '../../storage'
 import './ProblemSet.css'
 
@@ -15,6 +15,18 @@ export default function ProblemSet() {
 
   const problemSets = storage.getProblemSets()
   const selectedSet = problemSets.find(ps => ps.id === selectedSetId)
+
+  // If Home / ProblemSets saved a pending selection, apply it on mount.
+  useEffect(() => {
+    try {
+      const pending = storage.getPendingSelection()
+      if (pending && pending.type === 'problem' && pending.id) {
+        setSelectedSetId(pending.id)
+        setStep('create')
+        storage.clearPendingSelection()
+      }
+    } catch (e) {}
+  }, [])
 
   const createSet = () => {
     if (!name.trim()) return alert('問題集名を入力してください')

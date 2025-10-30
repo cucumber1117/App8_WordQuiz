@@ -60,35 +60,43 @@ export default function CreateBook() {
               </div>
             </div>
 
-            <div className="import-block">
-              <label>インポート (グループ/問題集)</label>
-              <div className="import-row">
-                <textarea id="importJsonGroup" placeholder='ここに共有された JSON を貼り付けて「インポート」を押してください' />
-                <div className="import-actions">
-                  <button className="btn" onClick={() => {
-                    const t = document.getElementById('importJsonGroup')?.value
-                    if (!t) return alert('JSON を貼り付けてください')
-                    try {
-                      const obj = JSON.parse(t)
-                      if (obj.type === 'group') {
-                        const id = storage.importGroup(obj)
-                        alert('グループをインポートしました')
-                        setSelectedGroup(id)
-                        refresh()
-                      } else if (obj.type === 'problemSet') {
-                        const id = storage.importProblemSet(obj)
-                        alert('問題集をインポートしました')
-                        refresh()
-                      } else {
-                        alert('サポートされていない JSON 形式です')
+            {!selectedGroup ? (
+              <div className="import-block">
+                <label>インポート (グループ/問題集)</label>
+                <div className="import-row">
+                  <textarea id="importJsonGroup" placeholder='ここに共有された JSON を貼り付けて「インポート」を押してください' />
+                  <div className="import-actions">
+                    <button className="btn" onClick={() => {
+                      const t = document.getElementById('importJsonGroup')?.value
+                      if (!t) return alert('JSON を貼り付けてください')
+                      try {
+                        const obj = JSON.parse(t)
+                        if (obj.type === 'group') {
+                          const id = storage.importGroup(obj)
+                          alert('グループをインポートしました')
+                          setSelectedGroup(id)
+                          refresh()
+                        } else if (obj.type === 'problemSet') {
+                          const id = storage.importProblemSet(obj)
+                          alert('問題集をインポートしました')
+                          refresh()
+                        } else {
+                          alert('サポートされていない JSON 形式です')
+                        }
+                      } catch (e) {
+                        alert('JSON の解析に失敗しました')
                       }
-                    } catch (e) {
-                      alert('JSON の解析に失敗しました')
-                    }
-                  }}>インポート</button>
+                    }}>インポート</button>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ padding: 12 }}>
+                <button className="btn" onClick={() => setSelectedGroup(null)}>◀ 戻る</button>
+                <div style={{ marginTop: 8, fontWeight: 700 }}>{groups.find(g => g.id === selectedGroup)?.name || '—'}</div>
+                <div style={{ marginTop: 6, color: '#666' }}>{(storage.getWordsByGroup(selectedGroup) || []).length} 単語</div>
+              </div>
+            )}
           </div>
         </div>
 
