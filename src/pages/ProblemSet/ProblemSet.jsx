@@ -43,6 +43,35 @@ export default function ProblemSet() {
     setChoices(newChoices)
   }
 
+  const [removeMode, setRemoveMode] = useState(false)
+  // removeMode: when true, show per-row delete controls for quick removal
+  const cancelRemoveMode = () => {
+    setRemoveMode(false)
+  }
+
+  const autoGrow = (el) => {
+    if (!el) return
+    try {
+      el.style.height = 'auto'
+      el.style.height = `${el.scrollHeight}px`
+    } catch (e) {}
+  }
+
+  // ensure existing textareas grow to fit when entering create/edit mode
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (step !== 'create') return
+    // run after render
+    setTimeout(() => {
+      document.querySelectorAll('.panel textarea').forEach((el) => {
+        try {
+          el.style.height = 'auto'
+          el.style.height = `${el.scrollHeight}px`
+        } catch (e) {}
+      })
+    }, 0)
+  }, [step, editingIndex])
+
   const saveProblem = () => {
     if (!selectedSetId) return alert('問題集を選択してください')
     if (!question.trim()) return alert('問題文を入力してください')
@@ -126,21 +155,7 @@ export default function ProblemSet() {
             />
             <button onClick={createSet}>作成</button>
           </div>
-          <div style={{ marginTop: 12, borderTop: '1px dashed #e6eef5', paddingTop: 12 }}>
-            <button
-              className="btn"
-              onClick={async () => {
-                try {
-                  const raw = storage.getData()
-                  const text = JSON.stringify(raw, null, 2)
-                  await navigator.clipboard.writeText(text)
-                  alert('ストレージの内容をクリップボードにコピーしました。')
-                } catch (e) {
-                  alert('コピーに失敗しました: ' + (e && e.message ? e.message : e))
-                }
-              }}
-            >ストレージ内容をコピー</button>
-          </div>
+          {/* ストレージ内容コピーボタンは不要のため削除 */}
         </div>
       )}
 
@@ -171,41 +186,61 @@ export default function ProblemSet() {
 
               <div className="formRow">
                 <label>問題文</label>
-                <input
+                <textarea
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
+                  onInput={(e) => autoGrow(e.target)}
                   placeholder="例: 'apple' の意味は？"
+                  style={{ width: '100%', minHeight: 40, maxHeight: 300, resize: 'none', padding: 8, borderRadius: 6 }}
                 />
               </div>
 
               {problemType === 'choice' && (
                 <div className="choicesBox">
                   <label>選択肢</label>
+
+                  {/* controls removed from top - add/delete sit in footer */}
+
                   {choices.map((c, i) => (
-                    <div key={i} className="choiceRow">
-                      <input
+                    <div key={i} className="choiceRow" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {removeMode && (
+                        <button type="button" className="delChoice" onClick={() => removeChoice(i)} aria-label={`選択肢 ${i + 1} を削除`}>✕</button>
+                      )}
+                      <textarea
                         value={c.text}
                         onChange={(e) => updateChoice(i, e.target.value)}
+                        onInput={(e) => autoGrow(e.target)}
                         placeholder={`選択肢 ${i + 1}`}
+                        style={{ minHeight: 36, maxHeight: 200, resize: 'none', padding: 8, borderRadius: 6 }}
                       />
-                      <label style={{ marginLeft: 8 }}>
-                        <input type="radio" name="correct" checked={correctIndex === i} onChange={() => setCorrectIndex(i)} /> 正解
-                      </label>
-                      {choices.length > 2 && (
-                        <button onClick={() => removeChoice(i)}>-</button>
+                      {/* 正解ボタンは削除モード中は非表示にする */}
+                      {!removeMode && (
+                        <button
+                          type="button"
+                          className={`setCorrect ${correctIndex === i ? 'active' : ''}`}
+                          onClick={() => setCorrectIndex(i)}
+                          aria-label={`選択肢 ${i + 1} を正解に設定`}
+                        >
+                          {'正解'}
+                        </button>
                       )}
                     </div>
                   ))}
-                  <button onClick={addChoice}>＋</button>
+                  <div className="choicesFooter">
+                    <button className="btn" onClick={() => { addChoice(); cancelRemoveMode(); }}>＋ 選択肢を追加</button>
+                    <button className={`btn ${removeMode ? 'active' : ''}`} onClick={() => setRemoveMode(!removeMode)}>{removeMode ? '削除モード: 解除' : '選択肢を削除'}</button>
+                  </div>
                 </div>
               )}
 
               <div className="formRow">
                 <label>答え</label>
-                <input
+                <textarea
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
+                  onInput={(e) => autoGrow(e.target)}
                   placeholder="正解を入力"
+                  style={{ width: '100%', minHeight: 40, maxHeight: 300, resize: 'none', padding: 8, borderRadius: 6 }}
                 />
               </div>
 

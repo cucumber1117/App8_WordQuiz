@@ -102,7 +102,7 @@ export default function CreateBook() {
 
         {!selectedGroup ? (
           <div className="empty-state">
-            <h2>📘 グループを選択してください</h2>
+            <h2 className="section-title">グループを選択してください</h2>
             {groups.length === 0 && (
               <p className="hint">まだグループがありません。「＋ グループ追加」から作成してください。</p>
             )}

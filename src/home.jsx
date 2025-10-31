@@ -15,7 +15,7 @@ export default function Home() {
       {page === 'home' && (
         <>
           <section className="hero">
-            <h2>ようこそ — 単語学習</h2>
+            <h2>Word Quiz</h2>
             <p>グループごとに単語を追加して、クイズで覚えましょう。</p>
 
             <div className="hero-actions" style={{ marginTop: 20 }}>

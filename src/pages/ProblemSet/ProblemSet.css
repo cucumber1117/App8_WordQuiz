@@ -166,6 +166,79 @@ input:focus {
   background: #edf2f7;
 }
 
+/* Tidy choice rows: textarea grows, button controls compact, responsive stack on small screens */
+.choiceRow {
+  display: flex;
+  gap: 8px;
+  align-items: center; /* vertically center button next to multi-line textarea */
+  flex-wrap: nowrap; /* keep button on the same row */
+}
+.choiceRow textarea {
+  flex: 1 1 auto;
+  min-width: 0; /* allow shrinking inside flex */
+  min-height: 36px;
+  max-height: 200px;
+  resize: none;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #000000; /* match question/answer inputs */
+  background: #fff;
+  font-size: 14px;
+}
+.choiceRow textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.18);
+  outline: none;
+}
+.choiceRow .setCorrect {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--muted-border, #d0d0d0);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--muted-text, #333);
+  cursor: pointer;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.choiceRow .setCorrect.active {
+  background: var(--accent, #2b9bf4);
+  color: #fff;
+  border-color: transparent;
+}
+/* removed checkmark-specific styles */
+.choiceRow .delChoice {
+  flex: 0 0 auto;
+  margin-left: 4px;
+}
+.choicesFooter {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+.choicesFooter .btn {
+  padding: 8px 12px;
+}
+
+@media (max-width: 520px) {
+  /* On small screens keep the textarea and buttons on one line if possible; allow taller textarea while button stays to the right */
+  .choiceRow {
+    align-items: center;
+    flex-wrap: nowrap;
+  }
+  .choiceRow .setCorrect,
+  .choiceRow .delChoice {
+    margin-top: 0;
+  }
+  .choicesFooter {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+}
 /* ===============================
    選択肢欄
 ================================= */
@@ -181,17 +254,21 @@ input:focus {
   padding: 10px;
 }
 
-.choiceRow button {
+.choiceRow .delChoice {
   background: #ff6b6b;
   color: white;
   border: none;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 8px;
   cursor: pointer;
-  transition: 0.2s;
+  transition: 0.12s;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.choiceRow button:hover {
+.choiceRow .delChoice:hover {
   background: #e14a4a;
 }
 
