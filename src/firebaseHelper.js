@@ -95,15 +95,48 @@ export async function uploadProblemSet(obj, docId = null) {
   try {
     const { db, helpers } = await ensureInit()
     const colRef = helpers.collection(db, 'sharedProblemSets')
-    const data = { payload: obj, createdAt: helpers.serverTimestamp() }
+    // Helper to normalize an item for comparison
+    const normalizeKey = (it) => {
+      const type = (it.type || 'word')
+      if (type === 'choice') {
+        const question = (it.question || '').toString().trim()
+        const choices = (it.choices || []).map(c => (c || '').toString().trim())
+        // normalizing answer index or answer text
+        let answerIndex = null
+        if (typeof it.answerIndex === 'number') answerIndex = it.answerIndex
+        else if (typeof it.answer === 'string') answerIndex = choices.findIndex(c => c === it.answer.trim())
+        return JSON.stringify({ type: 'choice', question, choices, answerIndex })
+      }
+      const question = (it.question || '').toString().trim()
+      const answer = (it.answer || '').toString().trim()
+      return JSON.stringify({ type: 'word', question, answer })
+    }
 
+    // If docId given, try to merge into that doc (so we only update/add changed items)
     if (docId) {
       const dref = helpers.doc(db, 'sharedProblemSets', docId)
-      await helpers.setDoc(dref, data)
+      const snap = await helpers.getDoc(dref)
+      let mergedPayload = obj
+      if (snap.exists()) {
+        const remote = snap.data().payload || {}
+        const remoteItems = remote.items || []
+        const localItems = obj.items || []
+        const map = new Map()
+        // index remote by normalized key
+        for (const it of remoteItems) map.set(normalizeKey(it), it)
+        // merge: local edits override remote when key's question matches
+        for (const lit of localItems) {
+          const key = normalizeKey(lit)
+          // always replace remote entry with local (treat as edited or same)
+          map.set(key, lit)
+        }
+        mergedPayload = { ...remote, ...obj, items: Array.from(map.values()) }
+      }
+      await helpers.setDoc(dref, { payload: mergedPayload, updatedAt: helpers.serverTimestamp() })
       return docId
     }
 
-    // Try to find existing by name (if provided)
+    // Try to find existing by name (if provided) and merge instead of blind overwrite
     if (obj && obj.name) {
       try {
         const q = helpers.query(colRef, helpers.where('payload.name', '==', obj.name))
@@ -111,7 +144,18 @@ export async function uploadProblemSet(obj, docId = null) {
         if (!snaps.empty) {
           const existingId = snaps.docs[0].id
           const dref = helpers.doc(db, 'sharedProblemSets', existingId)
-          await helpers.setDoc(dref, data)
+          const snap = snaps.docs[0]
+          const remote = (snap.data() && snap.data().payload) || {}
+          const remoteItems = remote.items || []
+          const localItems = obj.items || []
+          const map = new Map()
+          for (const it of remoteItems) map.set(normalizeKey(it), it)
+          for (const lit of localItems) {
+            const key = normalizeKey(lit)
+            map.set(key, lit)
+          }
+          const mergedPayload = { ...remote, ...obj, items: Array.from(map.values()) }
+          await helpers.setDoc(dref, { payload: mergedPayload, updatedAt: helpers.serverTimestamp() })
           return existingId
         }
       } catch (e) {
@@ -120,7 +164,8 @@ export async function uploadProblemSet(obj, docId = null) {
       }
     }
 
-    const ref = await helpers.addDoc(colRef, data)
+    // No existing doc found - create new
+    const ref = await helpers.addDoc(colRef, { payload: obj, createdAt: helpers.serverTimestamp() })
     return ref.id
   } catch (e) {
     throw e

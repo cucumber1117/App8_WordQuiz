@@ -3,6 +3,7 @@ import * as storage from '../../storage'
 import './ProblemSets.css'
 
 export default function ProblemSets({ onOpen }) {
+  const [tick, setTick] = useState(0)
   const sets = storage.getProblemSets()
   const [selectedId, setSelectedId] = useState(null)
   const [query, setQuery] = useState('')
@@ -171,17 +172,170 @@ export default function ProblemSets({ onOpen }) {
                         prompt('以下をコピーして共有してください', text)
                       }
                     }}>共有</button>
+
                     <button className="btn" onClick={async () => {
                       try {
                         const data = storage.exportProblemSet(s.id)
                         const id = await (await import('../../firebaseHelper')).uploadProblemSet(data)
                         const url = window.location.origin + window.location.pathname + `?shared_ps=${id}`
+                        // persist shared id to local problem set so others' uploads can be tracked
+                        try {
+                          const d = storage.getData()
+                          const ps = (d.problemSets || []).find(p => p.id === s.id)
+                          if (ps) {
+                            ps.sharedDocId = id
+                            storage.saveData(d)
+                          }
+                        } catch (e) {
+                          console.warn('failed to save sharedDocId locally', e)
+                        }
                         try { await navigator.clipboard.writeText(url); alert('共有URLをコピーしました: ' + url) } catch { prompt('共有URL', url) }
                       } catch (err) {
                         console.error('uploadProblemSet error', err)
                         alert('Firebase へのアップロードに失敗しました: ' + (err?.message || String(err)))
                       }
                     }}>アップロード</button>
+
+                    <button className="btn" onClick={async () => {
+                      // 問題集の Firestore 側更新を確認してローカルを上書きする
+                      // まずローカルに保存された sharedDocId を使う（他の人が upload した場合もここに id を入れておけば直接参照できる）
+                      const localData = storage.getData()
+                      const localPs = (localData.problemSets || []).find(x => x.id === s.id)
+                      let docId = localPs?.sharedDocId
+                      // If no stored id, try to find a shared doc by name on Firestore
+                      setLoadingImport(true)
+                      try {
+                        const fh = await import('../../firebaseHelper')
+                        if (!docId && localPs && localPs.name) {
+                          try {
+                            const { db, helpers } = await fh.ensureInit()
+                            const colRef = helpers.collection(db, 'sharedProblemSets')
+                            const q = helpers.query(colRef, helpers.where('payload.name', '==', localPs.name))
+                            const snaps = await helpers.getDocs(q)
+                            if (!snaps.empty) {
+                              docId = snaps.docs[0].id
+                            }
+                          } catch (e) {
+                            // query failed - fallback to prompt
+                            console.warn('query failed', e)
+                          }
+                        }
+
+                        if (!docId) {
+                          // fallback to asking user for id
+                          docId = prompt('Firestore のドキュメント ID を入力してください（upload 時に得た id）')
+                          if (!docId) return
+                        }
+
+                        const payload = await fh.downloadProblemSet(docId)
+                        if (!payload) return alert('指定のドキュメントが見つかりませんでした')
+                        const maybe = payload.payload || payload
+                        const remote = maybe.type === 'problemSet' ? maybe : (maybe.items ? maybe : null)
+                        if (!remote) return alert('取得したデータが問題集フォーマットではありません')
+                        // find local problem set
+                        const d = storage.getData()
+                        const local = (d.problemSets || []).find(x => x.id === s.id)
+                        if (!local) return alert('ローカルの問題集が見つかりません')
+                        const remoteItems = remote.items || []
+                        const localItems = local.items || []
+                        const equal = JSON.stringify(remoteItems) === JSON.stringify(localItems)
+                        if (equal) return alert('ローカルは最新です（差分なし）')
+                        if (!confirm('リモートに差分があります。ローカルの問題集をリモートの内容で上書きしますか？')) return
+                        // create new internal ids for items
+                        const uid = (prefix='pi_') => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,8)
+                        local.name = remote.name || local.name
+                        local.items = (remote.items || []).map(it => ({ id: uid(), ...it }))
+                        // persist sharedDocId if not present
+                        try {
+                          if (!local.sharedDocId) local.sharedDocId = docId
+                        } catch (e) {}
+                        storage.saveData(d)
+                        alert('ローカルの問題集をリモートで上書きしました')
+                        setTick(t => t + 1)
+                      } catch (err) {
+                        console.error('checkUpdate error', err)
+                        alert('更新確認に失敗しました: ' + (err?.message || String(err)))
+                      } finally {
+                        setLoadingImport(false)
+                      }
+                    }}>更新確認</button>
+                    <button className="btn" onClick={async () => {
+                      // リモートの差分をローカルに取り込む（上書きではなく新規追加）
+                      const localData = storage.getData()
+                      const localPs = (localData.problemSets || []).find(x => x.id === s.id)
+                      let docId = localPs?.sharedDocId
+                      setLoadingImport(true)
+                      try {
+                        const fh = await import('../../firebaseHelper')
+                        if (!docId && localPs && localPs.name) {
+                          try {
+                            const { db, helpers } = await fh.ensureInit()
+                            const colRef = helpers.collection(db, 'sharedProblemSets')
+                            const q = helpers.query(colRef, helpers.where('payload.name', '==', localPs.name))
+                            const snaps = await helpers.getDocs(q)
+                            if (!snaps.empty) docId = snaps.docs[0].id
+                          } catch (e) {
+                            console.warn('query failed', e)
+                          }
+                        }
+                        if (!docId) {
+                          docId = prompt('取り込むリモートのドキュメント ID を入力してください')
+                          if (!docId) return
+                        }
+                        const payload = await fh.downloadProblemSet(docId)
+                        if (!payload) return alert('指定のドキュメントが見つかりませんでした')
+                        const maybe = payload.payload || payload
+                        const remote = maybe.type === 'problemSet' ? maybe : (maybe.items ? maybe : null)
+                        if (!remote) return alert('取得したデータが問題集フォーマットではありません')
+
+                        const d = storage.getData()
+                        const local = (d.problemSets || []).find(x => x.id === s.id)
+                        if (!local) return alert('ローカルの問題集が見つかりません')
+
+                        const remoteItems = remote.items || []
+                        const localItems = local.items || []
+                        // Normalize items for robust duplicate detection:
+                        // - trim strings, lowercase for comparison, include type, question, answer/choices
+                        const normalizeKey = (it) => {
+                          const type = (it.type || 'word')
+                          if (type === 'choice') {
+                            const question = (it.question || '').toString().trim()
+                            const choices = (it.choices || []).map(c => (c || '').toString().trim())
+                            // answerIndex may be stored or answer string; normalize to index where possible
+                            let answerIndex = null
+                            if (typeof it.answerIndex === 'number') answerIndex = it.answerIndex
+                            else if (typeof it.answer === 'string') answerIndex = choices.findIndex(c => c === it.answer.trim())
+                            return JSON.stringify({ type: 'choice', question, choices, answerIndex })
+                          }
+                          const question = (it.question || '').toString().trim()
+                          const answer = (it.answer || '').toString().trim()
+                          return JSON.stringify({ type: 'word', question, answer })
+                        }
+                        const existing = new Set(localItems.map(it => normalizeKey(it)))
+                        let added = 0
+                        for (const it of remoteItems) {
+                          const key = JSON.stringify(normalize(it))
+                          if (!existing.has(key)) {
+                            const newId = 'pi_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8)
+                            local.items = local.items || []
+                            local.items.push({ id: newId, ...it })
+                            existing.add(key)
+                            added++
+                          }
+                        }
+                        if (added === 0) return alert('取り込む差分はありませんでした')
+                        // persist sharedDocId if not present
+                        try { if (!local.sharedDocId) local.sharedDocId = docId } catch (e) {}
+                        storage.saveData(d)
+                        alert('リモートから ' + added + ' 件を取り込みました')
+                        setTick(t => t + 1)
+                      } catch (err) {
+                        console.error('importDiff error', err)
+                        alert('取り込みに失敗しました: ' + (err?.message || String(err)))
+                      } finally {
+                        setLoadingImport(false)
+                      }
+                    }}>取り込む</button>
                   </div>
                 </div>
               </li>
