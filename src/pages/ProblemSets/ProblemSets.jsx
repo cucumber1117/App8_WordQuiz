@@ -197,12 +197,10 @@ export default function ProblemSets({ onOpen }) {
                     }}>アップロード</button>
 
                     <button className="btn" onClick={async () => {
-                      // 問題集の Firestore 側更新を確認してローカルを上書きする
-                      // まずローカルに保存された sharedDocId を使う（他の人が upload した場合もここに id を入れておけば直接参照できる）
+                      // Firestore 側の問題集を取得し、ローカルとマージする（ローカルで追加した問題は残す）
                       const localData = storage.getData()
                       const localPs = (localData.problemSets || []).find(x => x.id === s.id)
                       let docId = localPs?.sharedDocId
-                      // If no stored id, try to find a shared doc by name on Firestore
                       setLoadingImport(true)
                       try {
                         const fh = await import('../../firebaseHelper')
@@ -212,17 +210,13 @@ export default function ProblemSets({ onOpen }) {
                             const colRef = helpers.collection(db, 'sharedProblemSets')
                             const q = helpers.query(colRef, helpers.where('payload.name', '==', localPs.name))
                             const snaps = await helpers.getDocs(q)
-                            if (!snaps.empty) {
-                              docId = snaps.docs[0].id
-                            }
+                            if (!snaps.empty) docId = snaps.docs[0].id
                           } catch (e) {
-                            // query failed - fallback to prompt
                             console.warn('query failed', e)
                           }
                         }
 
                         if (!docId) {
-                          // fallback to asking user for id
                           docId = prompt('Firestore のドキュメント ID を入力してください（upload 時に得た id）')
                           if (!docId) return
                         }
@@ -232,25 +226,60 @@ export default function ProblemSets({ onOpen }) {
                         const maybe = payload.payload || payload
                         const remote = maybe.type === 'problemSet' ? maybe : (maybe.items ? maybe : null)
                         if (!remote) return alert('取得したデータが問題集フォーマットではありません')
-                        // find local problem set
+
                         const d = storage.getData()
                         const local = (d.problemSets || []).find(x => x.id === s.id)
                         if (!local) return alert('ローカルの問題集が見つかりません')
+
                         const remoteItems = remote.items || []
-                        const localItems = local.items || []
-                        const equal = JSON.stringify(remoteItems) === JSON.stringify(localItems)
-                        if (equal) return alert('ローカルは最新です（差分なし）')
-                        if (!confirm('リモートに差分があります。ローカルの問題集をリモートの内容で上書きしますか？')) return
-                        // create new internal ids for items
-                        const uid = (prefix='pi_') => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,8)
                         local.name = remote.name || local.name
-                        local.items = (remote.items || []).map(it => ({ id: uid(), ...it }))
+
+                        // normalize key function (same rules as 取り込む) for duplicate detection
+                        const normalizeKey = (it) => {
+                          const type = (it.type || 'word')
+                          if (type === 'choice') {
+                            const question = (it.question || '').toString().trim()
+                            const choices = (it.choices || []).map(c => (c || '').toString().trim())
+                            let answerIndex = null
+                            if (typeof it.answerIndex === 'number') answerIndex = it.answerIndex
+                            else if (typeof it.answer === 'string') answerIndex = choices.findIndex(c => c === it.answer.trim())
+                            return JSON.stringify({ type: 'choice', question, choices, answerIndex })
+                          }
+                          const question = (it.question || '').toString().trim()
+                          const answer = (it.answer || '').toString().trim()
+                          return JSON.stringify({ type: 'word', question, answer })
+                        }
+
+                        // Build map of local items by normalized key
+                        local.items = local.items || []
+                        const localMap = new Map()
+                        for (const it of local.items) {
+                          localMap.set(normalizeKey(it), it)
+                        }
+
+                        const uid = (prefix='pi_') => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,8)
+                        let added = 0
+                        let updated = 0
+
+                        for (const r of remoteItems) {
+                          const key = normalizeKey(r)
+                          if (localMap.has(key)) {
+                            // update existing local item (preserve local id)
+                            const existing = localMap.get(key)
+                            // copy fields from remote into existing (keep existing.id)
+                            Object.assign(existing, { ...r })
+                            updated++
+                          } else {
+                            // new remote item -> append
+                            local.items.push({ id: uid(), ...r })
+                            added++
+                          }
+                        }
+
                         // persist sharedDocId if not present
-                        try {
-                          if (!local.sharedDocId) local.sharedDocId = docId
-                        } catch (e) {}
+                        try { if (!local.sharedDocId) local.sharedDocId = docId } catch (e) {}
                         storage.saveData(d)
-                        alert('ローカルの問題集をリモートで上書きしました')
+                        alert('リモートから取り込んだ結果: 追加 ' + added + ' 件, 更新 ' + updated + ' 件')
                         setTick(t => t + 1)
                       } catch (err) {
                         console.error('checkUpdate error', err)
@@ -314,7 +343,7 @@ export default function ProblemSets({ onOpen }) {
                         const existing = new Set(localItems.map(it => normalizeKey(it)))
                         let added = 0
                         for (const it of remoteItems) {
-                          const key = JSON.stringify(normalize(it))
+                          const key = normalizeKey(it)
                           if (!existing.has(key)) {
                             const newId = 'pi_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8)
                             local.items = local.items || []

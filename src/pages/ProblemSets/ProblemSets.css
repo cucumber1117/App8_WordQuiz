@@ -40,13 +40,28 @@
 .importContent .btn { margin-top:6px }
 
 @media (max-width:900px) {
-  .setRow { flex-direction:column; align-items:flex-start }
+  /* Layout: stack main panels and make action buttons easier to tap on mobile */
+  .problemsets-page { flex-direction:column; padding:12px; gap:12px }
+  .listPanel { width:100%; min-width:unset }
+
+  /* Set rows: stack and expand action buttons to full width */
+  .setRow { flex-direction:column; align-items:flex-start; gap:12px }
   .setRow .actions { width:100%; display:flex; flex-direction:column; gap:8px }
-  .setRow .primary-actions, .setRow .secondary-actions { width:100%; display:flex; gap:8px }
-}
-@media (max-width:900px) {
-  .problemsets-page { flex-direction:column }
-  .listPanel { width:100% }
-  .book { flex-direction:column }
-  .page { width:100% }
+  .setRow .primary-actions, .setRow .secondary-actions { width:100%; display:flex; gap:8px; flex-wrap:wrap }
+  .setRow .primary-actions button, .setRow .secondary-actions button, .setRow .actions button {
+    width:100%; padding:12px; border-radius:10px; box-sizing:border-box;
+  }
+
+  /* Book / viewer layout for mobile */
+  .book { flex-direction:column; padding:12px; gap:12px }
+  .page { width:100%; min-height:200px; padding:14px }
+  .bookControls { display:flex; gap:8px; width:100%; justify-content:center }
+  .bookControls button { padding:10px 14px; min-width:120px }
+  .viewer { justify-content:center; padding:12px }
+
+  /* Import area textarea sizing */
+  .importContent textarea { min-height:120px }
+
+  /* Disable hover lift on mobile to avoid layout shift */
+  .setsList .setRow:hover { transform:none }
 }
