@@ -52,7 +52,7 @@ function App() {
   return (
     <div id="root">
       <header className="app-header">
-        <h1 className="app-title">単語覚えるアプリ</h1>
+        <h1 className="app-title">WordQuiz</h1>
         <p className="app-sub">シンプルな学習・クイズアプリ</p>
       </header>
 
